@@ -1,0 +1,33 @@
+kind: helm-release
+apiVersion: 1.1
+build:
+  context: .
+  dockerfile: Dockerfile
+install:
+  chart: charts/maana-google-storage
+  values:
+  - values.dev.yaml?
+  - secrets.dev.yaml?
+  set:
+    replicaCount: 1
+    image:
+      repository: maana-google-storage
+      tag: $(tag)
+      pullPolicy: Never
+    ingress:
+      annotations:
+        kubernetes.io/ingress.class: traefik-azds
+      hosts:
+      # This expands to form the service's public URL: [space.s.][rootSpace.]maana-google-storage.<random suffix>.<region>.azds.io
+      # Customize the public URL by changing the 'maana-google-storage' text between the $(rootSpacePrefix) and $(hostSuffix) tokens
+      # For more information see https://aka.ms/devspaces/routing
+      - $(spacePrefix)$(rootSpacePrefix)maana-google-storage$(hostSuffix)
+configurations:
+  develop:
+    build:
+      useGitIgnore: true
+    container:
+      sync:
+      - "!**/package.json"
+      iterate:
+        processesToKill: [node]

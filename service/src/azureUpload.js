@@ -29,29 +29,29 @@ const containerURL = ContainerURL.fromServiceURL(serviceURL, containerName)
 export const uploadStreamToBlob = (fileStream, blobName) => {
   return new Promise((resolve, reject) => {
     const stream = fileStream.pipe(
-    blobService.createWriteStreamToBlockBlob(containerName, blobName, {
-      blockIdPrefix: 'block'
-    })
-  )
+      blobService.createWriteStreamToBlockBlob(containerName, blobName, {
+        blockIdPrefix: 'block'
+      })
+    )
 
     stream.on('data', data => {
       process.stdout.write('.')
     })
 
-    stream.on('error', err => {      
+    stream.on('error', err => {
       console.log('error', err)
       reject(err)
     })
 
-    stream.on('finish', () => {    
+    stream.on('finish', () => {
       blobService.getBlobProperties(containerName, blobName, (err, result) => {
         const blockBlobURL = BlockBlobURL.fromContainerURL(
           containerURL,
           result.name
         )
-        if (err){
+        if (err) {
           reject(err)
-        }        
+        }
         resolve(blockBlobURL.url)
       })
     })
@@ -84,20 +84,26 @@ export const uploadToAzure = (req, res, next) => {
   })
 
   stream.on('error', err => {
+    console.error('Failed streaming', err)
     req.file.cloudStorageError = err
-    console.log('error', err)
     next(err)
   })
 
   stream.on('finish', () => {
-    req.file.cloudStorageObject = blobName    
+    req.file.cloudStorageObject = blobName
     blobService.getBlobProperties(containerName, blobName, (err, result) => {
       const blockBlobURL = BlockBlobURL.fromContainerURL(
         containerURL,
         result.name
       )
-      req.file.blobUrl = blockBlobURL.url
-      next()
+      if (err) {
+        console.error('Failed getting blob properties', err)
+        req.file.cloudStorageError = err
+        next(err)
+      } else {
+        req.file.blobUrl = blockBlobURL.url
+        next()
+      }
     })
   })
 }

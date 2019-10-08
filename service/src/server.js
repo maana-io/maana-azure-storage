@@ -96,11 +96,27 @@ const app = express()
 // CORS
 //
 const corsOptions = {
-  origin: `http://${PUBLICNAME}:3000`,
+  origin: `*`,
   credentials: true // <-- REQUIRED backend setting
 }
 
 app.use(cors(corsOptions)) // enable all CORS requests
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*')
+  res.header('Access-Control-Allow-Credentials', 'true')
+  res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
+  res.header('Access-Control-Expose-Headers', 'Content-Length')
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Accept, Authorization, Content-Type, X-Requested-With, Range'
+  )
+  if (req.method === 'OPTIONS') {
+    return res.send(200)
+  } else {
+    return next()
+  }
+})
 app.options('*', cors()) // enable pre-flight for all routes
 
 app.get('/', (req, res) => {
@@ -118,7 +134,6 @@ app.route('/upload').post((req, res, next) => {
 
   req.busboy.on('file', async (fieldname, file, filename) => {
     const url = await uploadStreamToBlob(file, filename)
-    console.log(url)
     res.send(url)
   })
 })
@@ -152,9 +167,6 @@ const initServer = options => {
   })
 
   const httpServer = http.createServer(app)
-  server.keepAliveTimeout = 10 * 60 * 1000
-  server.headersTimeout = 11 * 60 * 1000
-  server.timeout = 0
 
   server.installSubscriptionHandlers(httpServer)
 
@@ -162,27 +174,9 @@ const initServer = options => {
     log(SELF).info(
       `listening on ${print.external(`http://${HOSTNAME}:${PORT}/graphql`)}`
     )
-
-    // let auth0 = new AuthenticationClient({
-    //   domain: process.env.REACT_APP_PORTAL_AUTH_DOMAIN,
-    //   clientId: process.env.REACT_APP_PORTAL_AUTH_CLIENT_ID,
-    //   clientSecret: process.env.REACT_APP_PORTAL_AUTH_CLIENT_SECRET
-    // })
-
-    // auth0.clientCredentialsGrant(
-    //   {
-    //     audience: process.env.REACT_APP_PORTAL_AUTH_IDENTIFIER,
-    //     scope: 'read:client_grants'
-    //   },
-    //   function(err, response) {
-    //     if (err) {
-    //       console.error('Client was unable to connect', err)
-    //     }
-
-    //     clientSetup(response.access_token)
-    //   }
-    // )
   })
+
+  httpServer.timeout = 10 * 60 * 1000
 }
 
 export default initServer

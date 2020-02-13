@@ -1,18 +1,14 @@
 import azure from 'azure-storage'
-import fs from 'fs'
 import streamBuffers from 'stream-buffers'
 const blobService = azure.createBlobService()
 const containerName = 'maana-azure-storage-wrapper'
 
 const {
-  Aborter,
   BlockBlobURL,
   ContainerURL,
   ServiceURL,
   SharedKeyCredential,
-  StorageURL,
-  uploadStreamToBlockBlob,
-  uploadFileToBlockBlob
+  StorageURL
 } = require('@azure/storage-blob')
 
 const credentials = new SharedKeyCredential(

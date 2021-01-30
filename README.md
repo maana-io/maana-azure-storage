@@ -1,2 +1,2 @@
-# maana-google-storage
+# maana-azure-storage
 
